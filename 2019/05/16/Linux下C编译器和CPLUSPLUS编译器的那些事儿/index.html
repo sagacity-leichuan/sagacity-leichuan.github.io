@@ -21,7 +21,7 @@
 <meta property="og:image" content="http://yoursite.com/2019/05/16/Linux下C编译器和CPLUSPLUS编译器的那些事儿/1.png">
 <meta property="og:image" content="http://yoursite.com/2019/05/16/Linux下C编译器和CPLUSPLUS编译器的那些事儿/4.png">
 <meta property="og:image" content="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png">
-<meta property="og:updated_time" content="2019-05-16T16:35:28.616Z">
+<meta property="og:updated_time" content="2019-05-17T14:10:05.350Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Linux下C编译器和CPLUSPLUS编译器的那些事儿">
 <meta name="twitter:description" content="关于gcc和g++编译器的区别和联系。">
@@ -270,7 +270,7 @@ test.cpp:(.text+0x6f): undefined reference to `std::ios_base::Init::~Init()&apos
 collect2: error: ld returned 1 exit status
 </code></pre><p>&emsp;&emsp;在进入到链接阶段的时候，便发生了链接错误。如果我们使用<code>gcc -o test test.cpp -lstdc++</code>便能编译链接成功。<br></p>
 <h1 id="g"><a href="#g" class="headerlink" title="g++"></a>g++</h1><p>&emsp;&emsp;对于g++编译器，当他处理<code>.c</code>和<code>.cpp</code>源文件时都是<code>统一把它们当做是C++程序编译链接来处理的</code>，也就是说，此时把<code>.c</code>文件视为<code>.cpp</code>文件。二者的编译链接过程基本一致。g++在链接阶段默认是使用C++的库，这个库是完全兼容C语言的，毕竟C++是C语言的超集，在兼容C语言特性上是没有问题的。</p>
-<h1 id="gcc同时编译-c和-cpp源文件"><a href="#gcc同时编译-c和-cpp源文件" class="headerlink" title="gcc同时编译.c和.cpp源文件"></a>gcc同时编译.c和.cpp源文件</h1><p>&emsp;&emsp;在这种情况下，在编译，汇编阶段没有错误，但是到了链接阶段，即使添加了<code>-lstdc++</code>库，也会出现链接错误。比如下面的代码：</p>
+<h1 id="gcc同时编译-c和-cpp源文件"><a href="#gcc同时编译-c和-cpp源文件" class="headerlink" title="gcc同时编译.c和.cpp源文件"></a>gcc同时编译<code>.c</code>和<code>.cpp</code>源文件</h1><p>&emsp;&emsp;在这种情况下，在编译，汇编阶段没有错误，但是到了链接阶段，即使添加了<code>-lstdc++</code>库，也会出现链接错误。比如下面的代码：</p>
 <pre><code>fun.h
     int fun(int a, int b);
 </code></pre><hr>
@@ -298,14 +298,14 @@ collect2: error: ld returned 1 exit status
 test.cpp:(.text+0xf): undefined reference to `fun(int, int)&apos;
 collect2: error: ld returned 1 exit status
 </code></pre><p>&emsp;&emsp;可见，无法找到<code>fun</code>函数，这是为什么呢？原因是gcc在处理.c文件时，在编译阶段，把<code>.cpp</code>文件用编译C程序的方式处理，对<code>.c</code>源文件中的函数和变量符号不做处理，但是在处理<code>.cpp</code>文件时，把<code>.cpp</code>文件用编译C++程序的方式处理，对源文件中出现的函数和变量符号会根据返回值和参数类型对其更改。我们执行<code>gcc -S fun.c test.cpp</code>会得到编译后的汇编文件<code>fun.s</code>和<code>test.s</code>,部分截图如下： <br><div align="center"><img src="/2019/05/16/Linux下C编译器和CPLUSPLUS编译器的那些事儿/2.png" alt="picture1"></div><div align="center">图Y</div><div align="center"><img src="/2019/05/16/Linux下C编译器和CPLUSPLUS编译器的那些事儿/3.png" alt="picture2"></div><div align="center">图X</div><br>&emsp;&emsp;由图可知，在<code>main</code>函数中，<code>call</code>指令指定的是<code>_Z3funii</code>,而在<code>fun.s</code>中的<code>fun</code>函数的汇编符号任然为<code>fun</code>，所以两个汇编文件汇编之后进入链接阶段会出现函数未定义的链接错误。此时，如果把<code>fun.c</code>的后缀名改为<code>.cpp</code>，执行<code>gcc fun.cpp test.cpp -lstdc++</code>便没有问题。</p>
-<h1 id="g-同时编译-c和-cpp源文件"><a href="#g-同时编译-c和-cpp源文件" class="headerlink" title="g++同时编译.c和.cpp源文件"></a>g++同时编译<code>.c</code>和<code>.cp</code>p源文件</h1><p>&emsp;&emsp;完全没有问题，因为上文提到，g++编译器处理<code>.c</code>和<code>.cpp</code>源文件时都是<code>统一把它们当做是C++程序编译链接来处理的</code>。</p>
+<h1 id="g-同时编译-c和-cpp源文件"><a href="#g-同时编译-c和-cpp源文件" class="headerlink" title="g++同时编译.c和.cpp源文件"></a>g++同时编译<code>.c</code>和<code>.cpp</code>源文件</h1><p>&emsp;&emsp;完全没有问题，因为上文提到，g++编译器处理<code>.c</code>和<code>.cpp</code>源文件时都是<code>统一把它们当做是C++程序编译链接来处理的</code>。</p>
 <h1 id="extern-quot-C-quot-和-cplusplus宏对gcc-g-的行为影响"><a href="#extern-quot-C-quot-和-cplusplus宏对gcc-g-的行为影响" class="headerlink" title="extern &quot;C&quot;和__cplusplus宏对gcc/g++的行为影响"></a><code>extern &quot;C&quot;</code>和<code>__cplusplus</code>宏对gcc/g++的行为影响</h1><p>&emsp;&emsp;在<code>.cpp</code>源文件中，由于C++支持函数<code>重载</code>，可能出现有多个同名的函数，这些函数仅仅是返回值和参数不一样，那么编译器（这里的编译器既可以是gcc也可以是g++）编译链接C++程序时会把源文件中函数的参数类型和返回值信息在编译过程输出的汇编文件中的函数符号中体现,如图X中所示，而不仅仅是函数名；但是C语言并不支持函数<code>重载</code>，因此编译链接C程序时对源代码的函数在编译汇编过程中不会带上函数的参数类型等信息，一般只包括函数名，如图Y所示。<br>&emsp;&emsp;<code>extern &quot;C&quot;</code>的主要作用就是为了能够正确实现C++代码调用其他C语言代码。比如，在C++程序中调用使用.c源文件编写的同时使用gcc编译出来库的时候，在编译链接这个C++程序过程中，引用的头文件中函数声明的地方加上<code>extern &quot;C&quot;</code>后，会指示编译器在编译C++程序时这部分代码按编译C程序（而不是C++程序）的方式进行编译。如下所示：</p>
 <pre><code>fun.h
     extern &quot;C&quot;
     {
         int fun(int a, int b);
     }
-</code></pre><p>&emsp;&emsp;如果一个函数使用这样的方式声明的话，在编译链接C++源文件（这里的C++源文件可以是<code>.cpp</code>文件或有C++内容的.c文件，只是这里的<code>.c</code>文件需要使用g++编译链接，.cpp可以使用gcc和g++编译链接）中，编译的时候就不会对这个函数相关的代码做C++程序的处理，而是用C程序的方式处理。<br><br>&emsp;&emsp;在编译C++程序时，会有<code>__cplusplus</code>宏存在，而编译C程序时没有，与使用gcc和g++无关，毕竟gcc也可以编译一个C++程序。<br><br>&emsp;&emsp;下面我们使用一些实验来说明：<br><br>&emsp;&emsp;对于如下下代码：</p>
+</code></pre><p>&emsp;&emsp;如果一个函数使用这样的方式声明的话，在编译链接C++源文件（这里的C++源文件可以是<code>.cpp</code>文件或有C++内容的.c文件，只是这里的<code>.c</code>文件需要使用g++编译链接，<code>.cpp</code>文件可以使用gcc和g++编译链接）中，编译的时候就不会对这个函数相关的代码做C++程序的处理，而是用C程序的方式处理。<br><br>&emsp;&emsp;在编译C++程序时，会有<code>__cplusplus</code>宏存在，而编译C程序时没有，与使用gcc和g++无关，毕竟gcc也可以编译一个C++程序。<br><br>&emsp;&emsp;下面我们使用一些实验来说明：<br><br>&emsp;&emsp;对于如下下代码：</p>
 <pre><code>test.c
     #include &lt;stdio.h&gt;
     void TestPrintf()
@@ -714,11 +714,7 @@ MathJax.Hub.Queue(function() {
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">事件通知</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">线程池</a>
+                <a href="javascript:void(0)" class="js-tag color5">HTTP</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -726,7 +722,11 @@ MathJax.Hub.Queue(function() {
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">HTTP</a>
+                <a href="javascript:void(0)" class="js-tag color5">事件通知</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">线程池</a>
               </li>
              
               <li class="article-tag-list-item">
